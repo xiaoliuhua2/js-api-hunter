@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+httpx>=0.27
+# 运行时采集（可选）。安装后无需 playwright install —— 直接复用系统已装的
+# Chrome / Edge（channel="chrome" / "msedge"），不会额外下载 Chromium。
+playwright>=1.40

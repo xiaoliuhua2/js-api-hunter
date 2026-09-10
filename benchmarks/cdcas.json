@@ -1,0 +1,34 @@
+{
+  "name": "www.cdcas.edu.cn",
+  "url": "https://www.cdcas.edu.cn",
+  "options": {
+    "max_files": 400,
+    "min_score": 30,
+    "timeout": 20,
+    "concurrency": 8
+  },
+  "truth_source": "人工读 HTML + 源码复核确认（不是工具输出）。这站是传统服务端渲染的 CMS，几乎没有前端 AJAX，接口藏在 form action 和 JS 字符串拼接里。",
+  "truth_note": "这个用例的价值在于覆盖「非 SPA 站点」这一类：$.ajax / $.get / XMLHttpRequest 全是 0 次，接口靠 <form action> 和裸字符串。sjzc 那个用例是纯 SPA，覆盖不到这种情况。",
+  "known_issues": [
+    "/cms/cmsadmin/infopub/search.jsp 的参数来自 HTML <form> 里的 6 个 hidden input（pubtype/pubpath/templetid/display/relation/model），工具目前在 HTML 表单参数上是空白。"
+  ],
+  "fixed_2026_09_10": [
+    "/hzcms/wcm/member/loginverify.jsp 在源码里是 'http://'+serverip+':'+serverport+拼接的（appvar.js 里 serverip=\"\" serverport=\"80\"）。原先工具会把变量名折进 URL，产出 http://{serverip}:80/hzcms/…，并把 serverip 当成一个 HTTP 参数。已修：主机名整个是占位符时剥掉 scheme+authority 只留路径，同时不把主机/端口变量当参数。"
+  ],
+  "truth": [
+    "/cms/cmsadmin/infopub/search.jsp",
+    "/hzcms/wcm/member/loginverify.jsp",
+    "https://bd.cdcas.com/aspx/cq/stulogin.aspx"
+  ],
+  "baseline": {
+    "endpoints": 8,
+    "params": 3,
+    "pages": 0,
+    "noise": 1,
+    "visible_noise": 0,
+    "truth_total": 3,
+    "truth_found": 3,
+    "recall": 1.0,
+    "elapsed": 2.1
+  }
+}

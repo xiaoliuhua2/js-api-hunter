@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JS API Hunter · JS 接口提取工具</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H6a3 3 0 0 0-3 3v2M16 3h2a3 3 0 0 1 3 3v2M8 21H6a3 3 0 0 1-3-3v-2M16 21h2a3 3 0 0 0 3-3v-2"/>
+        <path d="M9.5 9.5 7.5 12l2 2.5M14.5 9.5l2 2.5-2 2.5"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>JS API Hunter</h1>
+      <span>从网站 JS 中提取接口与参数</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn small ghost" id="helpBtn">使用说明</button>
+    <div class="pill" id="statusPill" data-state="idle"><i></i><span>就绪</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ==================== 上半部分：输入（可折叠成一条） ==================== -->
+  <section class="card input-card" id="inputCard">
+
+    <!-- 摘要条：永远可见。收起时整个输入区就只剩这一条，把高度让给数据 -->
+    <div class="mini-bar">
+      <span class="mini-tag">目标</span>
+      <span class="mini-target" id="miniTarget">未填写</span>
+      <span class="mini-sep"></span>
+      <span class="mini-tag">选项</span>
+      <span class="mini-target dim" id="miniOpts">默认</span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" id="resetBtn">重置选项</button>
+      <button class="btn danger small hidden" id="cancelBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+        <span>停止</span>
+      </button>
+      <button class="btn primary small" id="scanBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>开始分析</span>
+      </button>
+      <button class="linkbtn" id="collapseBtn" title="收起 / 展开输入区">收起 ▴</button>
+    </div>
+
+    <div class="input-body" id="inputBody">
+    <div class="input-split">
+
+      <!-- 左：目标网址 -->
+      <div class="pane pane-url">
+        <div class="pane-head">
+          <h2>目标网址</h2>
+          <span class="tip">每行一个，带 <code>http://</code> 或 <code>https://</code></span>
+        </div>
+        <div class="ta-shell" id="urlShell">
+          <textarea id="urlInput" spellcheck="false" autocomplete="off" wrap="off"
+placeholder="https://example.com
+http://192.168.1.1:8080
+https://another.example.com:8443"></textarea>
+        </div>
+        <div class="pane-foot">
+          <span class="count" id="urlCount">0 个目标</span>
+          <span class="warn hidden" id="urlWarn"></span>
+          <span class="spacer"></span>
+          <button class="linkbtn" id="clearUrls">清空</button>
+        </div>
+      </div>
+
+      <!-- 右：选项 -->
+      <div class="pane pane-opt">
+        <div class="pane-head">
+          <h2>扫描选项</h2>
+          <span class="tip">按顺序逐个目标分析</span>
+        </div>
+
+        <div class="opt-grid">
+          <label class="field"><span>爬取深度</span>
+            <input id="optCrawl" type="number" value="0" min="0" max="3"></label>
+          <label class="field"><span>最多文件数</span>
+            <input id="optMaxFiles" type="number" value="400" min="1" max="3000"></label>
+          <label class="field"><span>并发线程</span>
+            <input id="optConcurrency" type="number" value="8" min="1" max="32"></label>
+          <label class="field"><span>最低置信度</span>
+            <input id="optMinScore" type="number" value="30" min="0" max="100"></label>
+        </div>
+
+        <div class="switches">
+          <label class="chk" title="用真实浏览器打开页面，抓实际发出的请求 —— 能找到静态分析拿不到的接口">
+            <input type="checkbox" id="optRuntime" checked><span>运行时采集</span></label>
+          <label class="chk" title="默认无头运行，勾上可看到浏览器过程">
+            <input type="checkbox" id="optRuntimeShow"><span>显示浏览器</span></label>
+          <label class="chk" title="浏览器真正加载过哪些 chunk 是当前环境的真值，能补掉静态递归漏掉的">
+            <input type="checkbox" id="optRuntimeJs" checked><span>实载 JS 回灌</span></label>
+          <label class="chk" title="探测 Swagger / OpenAPI 接口文档（能找到全量接口）">
+            <input type="checkbox" id="optOpenapi" checked><span>接口文档</span></label>
+          <label class="chk" title="解析 sourcemap，还原源码，参数更准">
+            <input type="checkbox" id="optSourcemap" checked><span>sourcemap</span></label>
+          <label class="chk" title="递归发现 webpack 懒加载分包 chunk">
+            <input type="checkbox" id="optChunks" checked><span>分包 chunk</span></label>
+          <label class="chk" title="接口太少时，猜常见 JS 入口文件名兜底">
+            <input type="checkbox" id="optJsFuzz" checked><span>猜入口名</span></label>
+          <label class="chk" title="校验 HTTPS 证书。遇到自签名证书的站点可关掉">
+            <input type="checkbox" id="optVerifySsl"><span>校验 HTTPS</span></label>
+        </div>
+
+        <div class="pane-foot">
+          <button class="adv-toggle" id="advToggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+            <span>高级选项</span>
+          </button>
+          <span class="spacer"></span>
+          <span class="tip">改完直接点上面的「开始分析」</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 高级选项（默认收起） -->
+    <div class="adv-panel hidden" id="advPanel">
+      <div class="adv-grid">
+        <label class="field"><span>请求超时(秒，总时长上限)</span>
+          <input id="optTimeout" type="number" value="15" min="3" max="120"></label>
+        <label class="field"><span>运行时页面停留(秒)</span>
+          <input id="optRuntimeSettle" type="number" value="3" min="1" max="20"></label>
+        <label class="field"><span>运行时跟随页面数</span>
+          <input id="optRuntimeFollow" type="number" value="10" min="0" max="30"></label>
+        <label class="field"><span>回灌时间上限(秒，0=不限)</span>
+          <input id="optRuntimeJsBudget" type="number" value="60" min="0" max="600"></label>
+      </div>
+      <div class="adv-wide">
+        <label class="field"><span>Cookie（需要登录态的站点填这里）</span>
+          <textarea id="optCookies" rows="2" spellcheck="false" placeholder="sessionid=xxx; token=yyy"></textarea></label>
+        <label class="field"><span>自定义请求头（每行一个 <code>Key: Value</code>）</span>
+          <textarea id="optHeaders" rows="2" spellcheck="false" placeholder="Authorization: Bearer xxx&#10;X-Requested-With: XMLHttpRequest"></textarea></label>
+        <label class="field"><span>代理（可选，如 <code>http://127.0.0.1:8080</code>）</span>
+          <input id="optProxy" type="text" spellcheck="false" placeholder="留空则走系统代理"></label>
+      </div>
+    </div>
+    </div><!-- /input-body -->
+  </section>
+
+  <!-- ==================== 进度 ==================== -->
+  <section class="card progress-card hidden" id="progressCard">
+    <div class="progress-head">
+      <div class="progress-title">
+        <span class="spinner" id="progSpinner"></span>
+        <strong id="progLabel">正在分析…</strong>
+      </div>
+      <div class="progress-meta" id="progMeta">0 个接口 · 0 个文件 · 0.0s</div>
+    </div>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <!-- ==================== 下半部分：输出 ==================== -->
+  <section class="card output-card hidden" id="results">
+
+    <div class="out-head">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="endpoints">接口 <b id="tabCountEp">0</b></button>
+        <button class="tab" data-tab="hosts">域名 <b id="tabCountHost">0</b></button>
+        <button class="tab" data-tab="base">baseURL <b id="tabCountBase">0</b></button>
+        <button class="tab" data-tab="findings">凭证/鉴权 <b id="tabCountFind">0</b></button>
+        <button class="tab" data-tab="resources">资源文件 <b id="tabCountRes">0</b></button>
+      </div>
+
+      <div class="out-head-right">
+        <div class="targets" id="targetChips"></div>
+        <div class="export-wrap">
+          <button class="btn small" id="exportBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            导出
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="menu hidden" id="exportMenu">
+            <div class="menu-title" id="exportScope">导出范围</div>
+            <a data-fmt="json">JSON（完整数据）</a>
+            <a data-fmt="csv">CSV（Excel 可直接开）</a>
+            <a data-fmt="md">Markdown（接口文档）</a>
+            <a data-fmt="http">HTTP 请求模板（Burp / IDE）</a>
+            <a data-fmt="txt">TXT（仅路径列表）</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="out-body">
+      <div class="stats" id="stats"></div>
+      <div class="base-hint hidden" id="baseHint"></div>
+
+      <!-- 接口 -->
+      <div class="panel" id="panel-endpoints">
+        <div class="filters">
+          <div class="input-shell sm">
+            <svg class="input-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="filterText" type="text" placeholder="搜索路径 / 参数 / 来源…">
+          </div>
+          <div class="chips" id="methodChips"></div>
+          <select id="filterCtx" class="select" title="按触发方式筛选"><option value="">全部触发方式</option></select>
+          <select id="filterSource" class="select"><option value="">全部来源</option></select>
+          <label class="chk inline"><input type="checkbox" id="hideThird" checked><span>隐藏统计/第三方</span></label>
+          <label class="chk inline"><input type="checkbox" id="hidePages" checked><span>隐藏页面路由</span></label>
+          <label class="chk inline"><input type="checkbox" id="onlyRuntime"><span>仅运行时确认</span></label>
+          <label class="chk inline"><input type="checkbox" id="onlyWithParams"><span>仅含参数</span></label>
+          <label class="chk inline"><input type="checkbox" id="onlyHighConf"><span>仅高置信</span></label>
+        </div>
+
+        <div class="table-scroll">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th class="w-target sortable" data-sort="target">目标站 <i></i></th>
+                <th class="w-method">方法</th>
+                <th class="sortable" data-sort="url">接口路径 <i></i></th>
+                <th class="w-params">参数</th>
+                <th class="w-conf sortable" data-sort="confidence">置信度 <i></i></th>
+                <th class="sortable" data-sort="source">来源 <i></i></th>
+              </tr>
+            </thead>
+            <tbody id="epBody"></tbody>
+          </table>
+          <div class="empty hidden" id="epEmpty">没有匹配的接口</div>
+        </div>
+
+        <!-- 分页只属于接口表：放在这个 panel 里，切到别的 tab 它就跟着消失，
+             不然在「域名/凭证」页点页码看起来像没反应 -->
+        <div class="ep-foot" id="epFoot">
+          <div class="pageinfo" id="pageInfo"></div>
+          <div class="pager" id="pager"></div>
+        </div>
+      </div>
+
+      <!-- 域名 / baseURL / 凭证 / 资源 面板由 JS 渲染 -->
+      <div class="panel hidden" id="panel-hosts"><div id="hostsBody" class="simple-list"></div></div>
+      <div class="panel hidden" id="panel-base"><div id="baseBody" class="simple-list"></div></div>
+      <div class="panel hidden" id="panel-findings"><div id="findingsBody" class="simple-list"></div></div>
+      <div class="panel hidden" id="panel-resources">
+        <div class="table-scroll">
+          <table class="grid"><thead><tr>
+            <th>类型</th><th>文件</th><th class="w-conf">大小</th><th class="w-conf">提取接口</th>
+          </tr></thead><tbody id="resBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="foot-row">
+        <div class="statusbar" id="statusBar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 使用说明（也是输出区的空状态） ==================== -->
+  <section class="card hero-tips" id="tips">
+    <h3>它是怎么工作的</h3>
+    <div class="steps">
+      <div class="step"><b>1</b><h4>抓取入口页</h4><p>解析首页 HTML，取出所有 <code>&lt;script src&gt;</code>、内联脚本与同源链接。</p></div>
+      <div class="step"><b>2</b><h4>展开 JS 资源</h4><p>下载 JS 文件，递归发现 webpack 懒加载 chunk，并尝试拉取 sourcemap 还原原始源码。</p></div>
+      <div class="step"><b>3</b><h4>静态扫描</h4><p>扫描字符串字面量，用 HTTP 调用上下文 + 业务关键词判断哪些是接口，并从调用参数里解析出 query / path / body 参数。</p></div>
+      <div class="step"><b>4</b><h4>运行时采集</h4><p>用本机 Chrome 打开页面跑一遍：记录真实请求；读 Vue Router 路由表精确区分页面路由；并把浏览器实际加载过的 JS 清单回灌给静态分析补抓。</p></div>
+      <div class="step"><b>5</b><h4>汇总输出</h4><p>静态与运行时结果合并去重，按置信度排序，导出 JSON / CSV / Markdown / HTTP 请求模板。</p></div>
+    </div>
+    <p class="tip-note">提示：静态阶段不主动请求发现的接口；运行时阶段会真实打开一次页面（会执行页面 JS，可能触发埋点）。请仅用于你有授权的站点。</p>
+  </section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

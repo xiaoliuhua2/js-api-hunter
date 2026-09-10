@@ -1,0 +1,38 @@
+{
+  "name": "cloud.sjzc.edu.cn",
+  "url": "https://cloud.sjzc.edu.cn",
+  "options": {
+    "max_files": 400,
+    "min_score": 30,
+    "timeout": 20,
+    "concurrency": 10
+  },
+  "truth_source": "Playwright 网络层在本站观测到的真实请求，只保留同源、非静态资源。这是页面真的发出过的接口，不存在误报，所以可以当召回率的标准答案。",
+  "truth_note": "想加更多标准答案，最靠谱的办法是补一份 MITM 抓包（见 README「用真实抓包做基准验证」），把唯一接口路径追加到 truth 里。",
+  "truth": [
+    "/api/blade-system/dict-biz/dictionary",
+    "/api/blade-system/tenant/tenantId/domain",
+    "/api/blade-vstec/exhelpdocument/tree",
+    "/api/blade-vstec/exhomeconfig/getByTenantId",
+    "/api/blade-vstec/exhomerotation/page",
+    "/api/blade-vstec/exhomesolvefa/homeShow",
+    "/api/blade-vstec/exproductadvantage/page",
+    "/api/blade-vstec/exrotationexpand/page",
+    "/api/blade-vstec/ptpctrel/getRelListByTenantId",
+    "/api/blade-vstec/ptpdtrel/getRelListByTenantId",
+    "/api/blade-vstec/ptproduct/getList",
+    "/api/blade-vstec/ptproductscate/getListByTree",
+    "/api/blade-vstec/uagreement/getDifUAgreementForUser"
+  ],
+  "baseline": {
+    "endpoints": 637,
+    "params": 794,
+    "pages": 139,
+    "noise": 15,
+    "visible_noise": 1,
+    "truth_total": 13,
+    "truth_found": 13,
+    "recall": 1.0,
+    "elapsed": 10.9
+  }
+}

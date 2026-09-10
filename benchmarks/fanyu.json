@@ -1,0 +1,67 @@
+{
+  "name": "vgms.fanyu.com",
+  "url": "https://vgms.fanyu.com",
+  "options": {
+    "max_files": 400,
+    "min_score": 30,
+    "timeout": 20,
+    "concurrency": 8
+  },
+  "truth_source": "人工读 JS（11 个站点脚本 + 5 段内联，穷举字符串字面量）+ 只读 HTTP 探测独立确认（200 / 非登录墙的 302）。不是工具输出。",
+  "truth_note": "这站的价值在于同时覆盖三个此前没测过的形态：① Java Spring Boot + jQuery/layui 的传统多页应用（不是 SPA）；② 未知变量前缀的字符串拼接（`mapping + \"/ologShowChange\"`，mapping 是函数参数）；③ 请求封装函数名不典型（`$.leon.splicingUrl(路径, {...})`），而且它的接口全部藏在自定义 `$.leon.sendRequest` 里。注意 /manage/** 是无差别 302 登录墙，探测无法区分真假路径，所以那 8 条不计入 truth。",
+  "known_issues": [
+    "工具输出 /ologShowChange、/ologShowDetail、/completeBefore 三条：源码是 `mapping + \"/ologShowChange?id=\" + id`，mapping 是函数参数（onShowOlog(mapping, ...)）。工具把变量前缀整个丢掉，产出裸路径 → 实测 404。真实路径形如 /manage/<业务>/ologShowChange（/manage/** 是登录墙，无法逐条确证）。这一类是「路径被静默截断」，比漏报更误导：它看起来像一条完整可用的接口。",
+    "/u661f/u671f 是假阳性：源码里 date 格式化的三元分支写着 `? \"/u661f/u671f\" : \"/u5468\"`（作者把 \\u661f\\u671f「星期一」的转义写错了）。它长得像路径但不是接口，实测 404。",
+    "/text/css 是假阳性：来自 jQuery 与站点代码里的 `style.type = 'text/css'`。工具的 MIME 黑名单有 application/json / text/javascript，但漏了 text/css。",
+    "/attachmentids_text/css 是假阳性：来自 `getCurrentNumber(\"attachmentids_\" + type)` 这类字符串拼接，拼接拼接串被当成了路径。",
+    "https://open.weixin.qq.com/connect/qrconnect 和 https://wp.qiye.qq.com/qidian/... 的 third_party 标记为 False——它们是外部主机，本该被标第三方（THIRD_PARTY_HOST_RE 没有 qq.com 这一类广域域名，是有意保守，但这两条确实是第三方）。",
+    "http://118.178.229.53:9000/wpcheck2021/downloadReport 出自**被注释掉的死代码**（`// if (type == 2) url = 'http://...'`）。工具不区分注释，把注释里的 URL 也提出来了。"
+  ],
+  "manual_only": [
+    "/loginApi/loginByVerifySign/phone —— 工具唯一漏的真接口。源码是 `$.leon.splicingUrl(domain + \"/loginApi/loginByVerifySign/phone\", {username, time, sign})`。URL 作为**自定义封装函数的第一个参数**，函数名 splicingUrl 不含工具的关键词表里的词（STRONG_FN_HINT_RE 有 api/http/ajax/request/send… 但没有 url），于是被判 nonnet 丢掉。实测 HTTP 200，是真接口。"
+  ],
+  "truth": [
+    "/loginApi/getUserName",
+    "/loginApi/sendCaptchaForLogin/phone",
+    "/loginApi/loginByCodeVerify/phone",
+    "/loginApi/loginByVerifySign/phone",
+    "/manage/login",
+    "/loginVerify",
+    "/retrievePassword",
+    "/forgotPasswordSendCode",
+    "/admin/index",
+    "/admin/fragment/upload",
+    "/accountModify/{schoolid}",
+    "/captcha",
+    "/fragment/common",
+    "/fragment/userInfo",
+    "/fragment/choiceSchoolAndPeriod",
+    "/security/bindPhone",
+    "/security/unbindPhone",
+    "/security/toPhone",
+    "/security/unbindPhonePage",
+    "/api/local/org/list",
+    "/api/local/roleList",
+    "/import/validation",
+    "/import/importView",
+    "/attachment/commentPreview",
+    "/attachment/commentDownload",
+    "/attachment/syncRelateBusi",
+    "/attachment/attachmentRenderSyncRelateBusiSearch",
+    "/attachment/getPreviewUrl",
+    "/attachment/imgPreview",
+    "/attachment/txtPreview",
+    "/attachment/getDownloadUrl"
+  ],
+  "baseline": {
+    "endpoints": 48,
+    "params": 133,
+    "pages": 0,
+    "noise": 2,
+    "visible_noise": 2,
+    "truth_total": 31,
+    "truth_found": 30,
+    "recall": 0.968,
+    "elapsed": 3.7
+  }
+}

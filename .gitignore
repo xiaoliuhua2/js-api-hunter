@@ -1,0 +1,19 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ---- WorkBuddy agent 记忆（非工具本体，勿提交）----
+.workbuddy/
+
+# ---- 操作系统 / 编辑器 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# ---- 本地运行产物 ----
+e2e_report*.*
